@@ -249,7 +249,12 @@ tr.fc-total td { background: var(--bg3); font-weight: 700; border-bottom: 2px so
 
 /* ── GRID LAYOUTS ── */
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.grid-tl { grid-template-columns: max-content 1fr; align-items: stretch; }
+.grid-tl { grid-template-columns: 1fr 0.82fr; align-items: stretch; }
+.grid-tl .tl-wrap table { width: 100% !important; min-width: 0 !important; }
+.tl-cell { display: flex; align-items: center; gap: 10px; }
+.tl-track { flex: 1; height: 6px; background: var(--bg4); border-radius: 4px; overflow: hidden; min-width: 40px; }
+.tl-fill { height: 100%; border-radius: 4px; }
+.tl-h { width: 42px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 @media (max-width: 900px){ .grid-tl { grid-template-columns: 1fr; } }
 tr.tl-row { cursor: pointer; transition: background .12s; }
 tr.tl-row:hover td { background: var(--blue-dim); }
@@ -390,6 +395,10 @@ table.dt td.ctr { text-align: center; }
 .pb-row.clk:hover { background: var(--bg3); }
 .pb-row.active { background: var(--blue-dim); }
 .pb-cnt { width: 52px; text-align: center; font-size: 11px; font-weight: 600; color: var(--text2); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.pb-head { display: flex; align-items: center; gap: 8px; padding: 0 4px 7px; margin-bottom: 4px; border-bottom: 1.5px solid var(--border2); }
+.pb-head span { font-size: 10px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--text3) !important; }
+.pb-head .pb-track { background: transparent; height: auto; }
+.pb-head .pb-hrs, .pb-head .pb-pct { text-align: right; }
 .pb-name { width: 150px; font-size: 11.5px; color: var(--text2); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pb-hrs  { width: 34px; text-align: right; font-size: 11px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .pb-track { flex: 1; height: 5px; background: var(--bg4); border-radius: 4px; overflow: hidden; }
@@ -547,10 +556,10 @@ table.dt td.ctr { text-align: center; }
             <div class="tbl-wrap tl-wrap">
               <table class="t tw-auto">
                 <thead><tr>
-                  <th style="width:44px;text-align:center">STT</th>
-                  <th style="width:150px">Tên nhân viên</th>
-                  <th style="text-align:right;width:104px">Tổng thời gian</th>
-                  <th style="text-align:center;width:126px">Tăng ca / Thiếu</th>
+                  <th style="width:8%;text-align:center">STT</th>
+                  <th style="width:27%">Tên nhân viên</th>
+                  <th style="width:43%">Tổng thời gian</th>
+                  <th style="width:22%;text-align:center">Tăng ca / Thiếu</th>
                 </tr></thead>
                 <tbody id="tc-list-kd"></tbody>
               </table>
@@ -844,10 +853,10 @@ table.dt td.ctr { text-align: center; }
             <div class="tbl-wrap tl-wrap">
               <table class="t tw-auto">
                 <thead><tr>
-                  <th style="width:44px;text-align:center">STT</th>
-                  <th style="width:150px">Tên nhân viên</th>
-                  <th style="text-align:right;width:104px">Tổng thời gian</th>
-                  <th style="text-align:center;width:126px">Tăng ca / Thiếu</th>
+                  <th style="width:8%;text-align:center">STT</th>
+                  <th style="width:27%">Tên nhân viên</th>
+                  <th style="width:43%">Tổng thời gian</th>
+                  <th style="width:22%;text-align:center">Tăng ca / Thiếu</th>
                 </tr></thead>
                 <tbody id="tc-list-kt"></tbody>
               </table>
@@ -1601,9 +1610,12 @@ function renderTimeTable(elId, data, wk) {
   var curNv = document.getElementById(dept === 'kd' ? 'f-kd-nv' : 'f-kt-nv');
   var cur = curNv ? curNv.value : 'all';
   var target = TARGET_H * wk;
+  var maxTt = Math.max.apply(null, data.map(function(d){return d.tt;}).concat([1])) * wk;
   document.getElementById(elId).innerHTML = data.map(function(d, i) {
     var tt = Math.round(d.tt * wk);   // tổng thời gian thực tế theo kỳ
     var delta = tt - target;          // + = tăng ca, − = thiếu
+    var barCol = delta > 0 ? 'var(--coral)' : delta < 0 ? 'var(--amber)' : 'var(--green)';
+    var barW = Math.min(100, Math.round(tt / maxTt * 100));
     var badge = delta === 0
       ? '<span class="badge b-green">Đủ giờ</span>'
       : delta > 0
@@ -1615,7 +1627,7 @@ function renderTimeTable(elId, data, wk) {
     return '<tr class="tl-row' + active + '"' + click + '>'
       + '<td class="ctr">' + (i+1) + '</td>'
       + '<td class="bold">' + d.name + '</td>'
-      + '<td class="num" style="font-weight:700;color:var(--green)">' + tt + 'h</td>'
+      + '<td><div class="tl-cell"><div class="tl-track"><div class="tl-fill" style="width:' + barW + '%;background:' + barCol + '"></div></div><span class="tl-h" style="color:' + barCol + '">' + tt + 'h</span></div></td>'
       + '<td class="ctr">' + badge + '</td>'
       + '</tr>';
   }).join('');
@@ -1682,7 +1694,14 @@ function renderTimeShare(elId, dept, empId, wk) {
     + '<div class="pb-track"><div class="pb-fill" style="width:' + Math.min(100,totPct) + '%;background:var(--text2)"></div></div>'
     + '<span class="pb-pct" style="color:var(--text)">' + totPct + '%</span>'
     + fBadge + '</div>';
-  document.getElementById(elId).innerHTML = rows + foot;
+  var head = '<div class="pb-head">'
+    + '<span class="pb-name">Loại công việc</span>'
+    + '<span class="pb-cnt">Số việc</span>'
+    + '<span class="pb-hrs">Giờ</span>'
+    + '<div class="pb-track"></div>'
+    + '<span class="pb-pct">Tỷ lệ</span>'
+    + '</div>';
+  document.getElementById(elId).innerHTML = head + rows + foot;
 }
 
 // ── RENDER KD CV ──
